@@ -1,0 +1,114 @@
+---
+title: "GraphFrames"
+author: "Al Firrell"
+date: "27/04/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load packages
+```{r packages}
+## Ensure the graphframes jar is in your Spark folder: for me, loading
+## graphframes-0.8.0-spark2.4-s_2.11.jar from https://spark-packages.org/package/graphframes/graphframes
+## into C:\Users\Alastair\AppData\Local\spark\spark-2.4.3-bin-hadoop2.7\jars
+#install.packages("graphframes")
+
+library(graphframes)
+library(sparklyr)
+library(dplyr)
+
+```
+
+
+
+## Set up some data in Spark
+
+```{r connect and data}
+sc <- spark_connect(master = "local") #, version = "2.1.0")
+
+highschool_tbl <- copy_to(sc, ggraph::highschool, "highschool")
+
+head(highschool_tbl)
+
+```
+
+Create edges and vertices:
+
+```{r nodes and edges, warning=FALSE}
+from_tbl <- highschool_tbl %>%
+  distinct(from) %>%
+  transmute(id = from)
+
+to_tbl <- highschool_tbl %>%
+  distinct(to) %>%
+  transmute(id = to)
+
+vertices_tbl <- from_tbl %>%
+  sdf_bind_rows(to_tbl)
+
+head(vertices_tbl)
+
+# Create a table with <source, destination> edges
+edges_tbl <- highschool_tbl %>%
+  transmute(src = from, dst = to)
+
+head(edges_tbl)
+
+```
+
+Use gf_graphframe to create a new graph:
+
+```{r graphframe create}
+highschool_gf <- gf_graphframe(vertices_tbl, edges_tbl)
+highschool_gf
+```
+
+## List of graphframes functions
+```{r list functions}
+lsf.str("package:graphframes")
+```
+
+## Metrics
+
+Basic PageRank
+```{r pagerank}
+page_rank <- 
+  highschool_gf %>%
+  gf_pagerank(reset_prob = 0.15, max_iter = 10L, source_id = "1")
+page_rank
+```
+
+Degrees
+```{r deg}
+highschool_gf %>% gf_degrees() %>% arrange(desc(degree))
+# highschool_gf %>% gf_in_degrees()
+# highschool_gf %>% gf_out_degrees()
+
+```
+
+## Visualise
+
+```{r graph}
+library(ggraph)
+library(igraph)
+
+graph <- highschool_tbl %>%
+  sample_n(30) %>%
+  collect() %>%
+  graph_from_data_frame()
+
+ggraph(graph, layout = 'kk') +
+    geom_edge_link(aes(colour = factor(year))) +
+    geom_node_point() +
+    geom_node_text(aes(label = name), nudge_x = -0.25, nudge_y = 0.25, size = 3) +
+    ggtitle('An example')
+```
+
+
+
+
+
+
