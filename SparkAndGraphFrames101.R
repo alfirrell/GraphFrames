@@ -5,12 +5,25 @@
 
 library(sparklyr)
 library(graphframes)
+library(stringr)
 
 #spark_install()
 
-spark_installed_versions()
-#options("SPARK_HOME")
-Sys.getenv("SPARK_HOME")
+## Shift over the graphframes jars into the SPARK_HOME jar dir
+spark_home <- Sys.getenv("SPARK_HOME")
+spark_jar_dir <- file.path(spark_home, "jars")
+spark_jars <- list.files(spark_jar_dir)
+if (!any(str_starts(spark_jars, "graphframes"))) {
+  spark_version <- spark_version_from_home(spark_home)
+  if (str_starts(spark_version, "2.4")) {
+    file.copy(file.path("jars/graphframes-0.8.0-spark2.4-s_2.11.jar", spark_jar_dir))
+  } else if (str_starts(spark_version, "3.0")) {
+    file.copy(file.path("jars/graphframes-0.8.0-spark3.0-s_2.12.jar", spark_jar_dir)) 
+  }
+}
+
+
+
 sc <- spark_connect(master = "local") #, 
                     #spark_home = "C:/Users/Alastair/AppData/Local/spark/spark-3.1.1-bin-hadoop3.2")
 
