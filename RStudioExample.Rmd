@@ -2,7 +2,9 @@
 title: "GraphFrames"
 author: "Al Firrell"
 date: "27/04/2021"
-output: html_document
+output: 
+  html_document: 
+    keep_md: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -16,10 +18,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ## into C:\Users\Alastair\AppData\Local\spark\spark-2.4.3-bin-hadoop2.7\jars
 #install.packages("graphframes")
 
-library(graphframes)
+library(tidyverse)
 library(sparklyr)
-library(dplyr)
+library(graphframes)
 
+Sys.getenv("SPARK_HOME")
 ```
 
 
@@ -27,7 +30,8 @@ library(dplyr)
 ## Set up some data in Spark
 
 ```{r connect and data}
-sc <- spark_connect(master = "local") #, version = "2.1.0")
+options(sparklyr.log.console = TRUE)
+sc <- spark_connect(master = "local", version="2.4") #, version = "2.1.0")
 
 highschool_tbl <- copy_to(sc, ggraph::highschool, "highschool")
 
@@ -107,6 +111,9 @@ ggraph(graph, layout = 'kk') +
     ggtitle('An example')
 ```
 
+```{r disconnect}
+spark_disconnect_all()
+```
 
 
 

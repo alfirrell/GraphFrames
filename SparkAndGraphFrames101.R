@@ -27,7 +27,7 @@ if (!any(str_starts(spark_jars, "graphframes"))) {
 sc <- spark_connect(master = "local") #, 
                     #spark_home = "C:/Users/Alastair/AppData/Local/spark/spark-3.1.1-bin-hadoop3.2")
 
-#spark_disconnect(sc)
+#spark_disconnect_all()
 
 
 # Hello world -------------------------------------------------------------
